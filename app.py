@@ -1,14 +1,10 @@
 import streamlit as st
+st.set_page_config(page_title="إضافة سابقة", layout="centered")
 
-st.set_page_config(page_title="القاضي الذكي", layout="centered")
-st.title("⚖️ القاضي الذكي")
-st.write("✅ التطبيق يعمل! يمكنك الآن البدء بإدخال القضايا.")
-import streamlit as st
 import json
 import os
 
-# إعداد الصفحة
-st.set_page_config(page_title="إضافة سابقة", layout="centered")
+# العنوان
 st.title("➕ إضافة سابقة قضائية جديدة")
 
 # مسار ملف السوابق
