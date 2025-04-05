@@ -1,10 +1,15 @@
 import streamlit as st
 import json
 import os
+import openai  # ✅ استيراد مكتبة OpenAI
+
+# إعداد المفتاح من secrets
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 st.set_page_config(page_title="إضافة سابقة", layout="centered")
 st.title("➕ إضافة سابقة قضائية جديدة")
 
+# إعداد الملفات
 file_path = "precedents.json"
 attachments_dir = "attachments"
 os.makedirs(attachments_dir, exist_ok=True)
@@ -21,6 +26,7 @@ def save_precedent(new_entry):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(precedents, f, ensure_ascii=False, indent=2)
 
+# نموذج إدخال السابقة
 with st.form("precedent_form"):
     case_number = st.text_input("📁 رقم القضية", "999/2025")
     case_type = st.selectbox("⚖️ نوع القضية", ["مدني جزئي", "مدني كلي", "تجاري", "إيجار"])
@@ -62,6 +68,8 @@ with st.form("precedent_form"):
         if saved_files:
             st.write("📎 تم رفع المرفقات:")
             st.write(saved_files)
+
+# 🤖 القاضي الذكي - استشارة GPT
 st.markdown("---")
 st.subheader("🤖 استشارة القاضي الذكي")
 
@@ -79,7 +87,7 @@ if st.button("استشارة AI Agent"):
             response = openai.ChatCompletion.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "أنت قاضٍ خبير في القانون المدني. أجب بصياغة رسمية دقيقة."},
+                    {"role": "system", "content": "أنت قاضٍ خبير في القانون المدني. أجب بصيغة قضائية رسمية."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.4
@@ -88,4 +96,4 @@ if st.button("استشارة AI Agent"):
             st.success("✅ تم توليد الحكم الذكي:")
             st.text_area("📋 الحكم الذكي المقترح:", result, height=300)
         except Exception as e:
-            st.error(f"❌ حدث خطأ: {e}")
+            st.error(f"❌ حدث خطأ أثناء الاستشارة: {e}")
