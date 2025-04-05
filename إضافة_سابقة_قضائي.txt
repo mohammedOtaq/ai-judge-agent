@@ -89,4 +89,16 @@ zip_name = "pages_with_add_precedent.zip"
 with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zipf:
     zipf.write(file_path, arcname=f"pages/{file_name}")
 
-zip_name
+
+saved_files = []
+for file in uploaded_files:
+    file_path_out = os.path.join(attachments_dir, file.name)
+    with open(file_path_out, "wb") as f:
+        f.write(file.getbuffer())
+    saved_files.append(file.name)
+
+# عرض الملفات بعد الحفظ
+if saved_files:
+    st.success("✅ تم حفظ المرفقات:")
+    st.write(saved_files)
+"المرفقات": saved_files
