@@ -49,11 +49,11 @@ with st.form("precedent_form"):
     keywords = st.text_input("🔍 كلمات مفتاحية (مفصولة بفاصلة)", "إيجار, عقد, ضرر")
 
     # رفع المرفقات
-    uploaded_files = st.file_uploader(
-        "📎 مرفقات القضية (PDF أو صور)", 
-        type=["pdf", "jpg", "png", "jpeg", "docx"],
-        accept_multiple_files=True
-    )
+  uploaded_files = st.file_uploader(
+    "📎 مرفقات القضية (PDF، صور، أو Word)", 
+    type=["pdf", "jpg", "png", "jpeg", "docx"],
+    accept_multiple_files=True
+)
 
     submitted = st.form_submit_button("💾 حفظ السابقة")
 
