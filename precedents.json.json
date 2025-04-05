@@ -1,3 +1,16 @@
+import zipfile
+from pathlib import Path
+
+# إعداد المجلد
+pages_dir = Path("pages")
+pages_dir.mkdir(exist_ok=True)
+
+# اسم الملف
+file_name = "2_➕_إضافة_سابقة_قضائية.py"
+file_path = pages_dir / file_name
+
+# كود الصفحة
+page_code = '''
 import streamlit as st
 import json
 import os
@@ -65,3 +78,15 @@ with st.form("precedent_form"):
 
         save_precedent(new_case)
         st.success("✅ تم حفظ السابقة القضائية والمرفقات بنجاح!")
+'''
+
+# إنشاء الملف
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(page_code)
+
+# ضغط المجلد
+zip_name = "pages_with_add_precedent.zip"
+with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zipf:
+    zipf.write(file_path, arcname=f"pages/{file_name}")
+
+
