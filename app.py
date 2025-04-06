@@ -1,4 +1,7 @@
 import streamlit as st
+with st.chat_message(name="assistant"):
+
+import streamlit as st
 import json
 import os
 
