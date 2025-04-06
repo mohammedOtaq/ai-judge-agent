@@ -1,5 +1,6 @@
 import streamlit as st
 with st.chat_message(name="assistant"):
+    st.write("استشارة القاضي الذكي")
 
 import streamlit as st
 import json
