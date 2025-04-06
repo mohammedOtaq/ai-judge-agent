@@ -1,8 +1,6 @@
 import streamlit as st
 import json
 import os
-import openai  # ✅ استيراد مكتبة OpenAI
-openai.api_key = st.secrets["OPENAI_API_KEY"]  # ✅ ربط API Key من Streamlit Secrets
 
 st.set_page_config(page_title="إضافة سابقة", layout="centered")
 st.title("➕ إضافة سابقة قضائية جديدة")
@@ -64,7 +62,6 @@ with st.form("precedent_form"):
         if saved_files:
             st.write("📎 تم رفع المرفقات:")
             st.write(saved_files)
-
 st.markdown("---")
 st.subheader("🤖 استشارة القاضي الذكي")
 
@@ -92,3 +89,5 @@ if st.button("استشارة AI Agent"):
             st.text_area("📋 الحكم الذكي المقترح:", result, height=300)
         except Exception as e:
             st.error(f"❌ حدث خطأ: {e}")
+
+
