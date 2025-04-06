@@ -2,15 +2,15 @@ import streamlit as st
 import json
 import os
 import openai
-from dotenv import load_dotenv
 
-# إعداد
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# ✅ استخدام مفتاح OpenAI من Streamlit Secrets
+openai.api_key = st.secrets["OPENAI_API_KEY"]
+
+# إعداد الصفحة
 st.set_page_config(page_title="إضافة سابقة + استشارة", layout="centered")
 st.title("➕ إضافة سابقة قضائية + استشارة القاضي الذكي")
 
-# مسارات
+# مسارات البيانات
 file_path = "precedents.json"
 attachments_dir = "attachments"
 os.makedirs(attachments_dir, exist_ok=True)
@@ -29,7 +29,7 @@ def save_precedent(new_entry):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(precedents, f, ensure_ascii=False, indent=2)
 
-# ====== نموذج الإدخال ======
+# ====== نموذج إدخال سابقة ======
 with st.form("precedent_form"):
     case_number = st.text_input("📁 رقم القضية", "999/2025")
     case_type = st.selectbox("⚖️ نوع القضية", ["مدني جزئي", "مدني كلي", "تجاري", "إيجار"])
@@ -72,7 +72,7 @@ with st.form("precedent_form"):
             st.write("📎 تم رفع المرفقات:")
             st.write(saved_files)
 
-# ====== استشارة الذكاء الاصطناعي ======
+# ====== استشارة القاضي الذكي عبر OpenAI GPT ======
 st.markdown("---")
 st.subheader("🤖 استشارة القاضي الذكي")
 
@@ -99,7 +99,6 @@ if st.button("استشارة AI Agent"):
             st.success("✅ تم توليد الحكم الذكي:")
             st.text_area("📋 الحكم الذكي المقترح:", result, height=300)
 
-            # حفظ الحكم كمقترح سابقة إذا أراد المستخدم
             if st.button("📌 حفظ الحكم الذكي كسابقة"):
                 ai_case = {
                     "رقم_القضية": case_number.strip(),
