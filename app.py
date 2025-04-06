@@ -2,34 +2,27 @@ import streamlit as st
 import json
 import os
 import openai  # ✅ استيراد مكتبة OpenAI
+openai.api_key = st.secrets["OPENAI_API_KEY"]  # ✅ ربط API Key من Streamlit Secrets
 
-# إعداد مفتاح OpenAI من secrets
-openai.api_key = st.secrets["OPENAI_API_KEY"]
-
-# إعداد صفحة Streamlit
 st.set_page_config(page_title="إضافة سابقة", layout="centered")
 st.title("➕ إضافة سابقة قضائية جديدة")
 
-# ملفات التخزين
 file_path = "precedents.json"
 attachments_dir = "attachments"
 os.makedirs(attachments_dir, exist_ok=True)
 
-# تحميل السوابق من الملف
 def load_precedents():
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
     return []
 
-# حفظ السابقة الجديدة في الملف
 def save_precedent(new_entry):
     precedents = load_precedents()
     precedents.append(new_entry)
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(precedents, f, ensure_ascii=False, indent=2)
 
-# 📝 نموذج إدخال السابقة
 with st.form("precedent_form"):
     case_number = st.text_input("📁 رقم القضية", "999/2025")
     case_type = st.selectbox("⚖️ نوع القضية", ["مدني جزئي", "مدني كلي", "تجاري", "إيجار"])
@@ -39,7 +32,6 @@ with st.form("precedent_form"):
     reasoning = st.text_area("📖 الحيثيات")
     keywords = st.text_input("🔍 كلمات مفتاحية (مفصولة بفاصلة)", "إيجار, عقد, ضرر")
 
-    # رفع المرفقات
     uploaded_files = st.file_uploader(
         "📎 مرفقات القضية (PDF، صور، أو Word)", 
         type=["pdf", "jpg", "png", "jpeg", "docx"],
@@ -73,7 +65,6 @@ with st.form("precedent_form"):
             st.write("📎 تم رفع المرفقات:")
             st.write(saved_files)
 
-# 🤖 استشارة القاضي الذكي
 st.markdown("---")
 st.subheader("🤖 استشارة القاضي الذكي")
 
@@ -100,4 +91,4 @@ if st.button("استشارة AI Agent"):
             st.success("✅ تم توليد الحكم الذكي:")
             st.text_area("📋 الحكم الذكي المقترح:", result, height=300)
         except Exception as e:
-            st.error(f"❌ حدث خطأ أثناء الاستشارة: {e}")
+            st.error(f"❌ حدث خطأ: {e}")
