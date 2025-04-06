@@ -1,11 +1,7 @@
-import streamlit as st
-with st.chat_message(name="assistant"):
-    st.write("استشارة القاضي الذكي")
 
 import streamlit as st
 import json
 import os
-
 st.set_page_config(page_title="إضافة سابقة", layout="centered")
 st.title("➕ إضافة سابقة قضائية جديدة")
 
