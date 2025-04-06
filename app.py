@@ -1,26 +1,35 @@
-
 import streamlit as st
 import json
 import os
-st.set_page_config(page_title="إضافة سابقة", layout="centered")
-st.title("➕ إضافة سابقة قضائية جديدة")
+import openai
+from dotenv import load_dotenv
 
+# إعداد
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
+st.set_page_config(page_title="إضافة سابقة + استشارة", layout="centered")
+st.title("➕ إضافة سابقة قضائية + استشارة القاضي الذكي")
+
+# مسارات
 file_path = "precedents.json"
 attachments_dir = "attachments"
 os.makedirs(attachments_dir, exist_ok=True)
 
+# تحميل السوابق
 def load_precedents():
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
     return []
 
+# حفظ سابقة جديدة
 def save_precedent(new_entry):
     precedents = load_precedents()
     precedents.append(new_entry)
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(precedents, f, ensure_ascii=False, indent=2)
 
+# ====== نموذج الإدخال ======
 with st.form("precedent_form"):
     case_number = st.text_input("📁 رقم القضية", "999/2025")
     case_type = st.selectbox("⚖️ نوع القضية", ["مدني جزئي", "مدني كلي", "تجاري", "إيجار"])
@@ -31,7 +40,7 @@ with st.form("precedent_form"):
     keywords = st.text_input("🔍 كلمات مفتاحية (مفصولة بفاصلة)", "إيجار, عقد, ضرر")
 
     uploaded_files = st.file_uploader(
-        "📎 مرفقات القضية (PDF، صور، أو Word)", 
+        "📎 مرفقات القضية (PDF، صور، أو Word)",
         type=["pdf", "jpg", "png", "jpeg", "docx"],
         accept_multiple_files=True
     )
@@ -62,6 +71,8 @@ with st.form("precedent_form"):
         if saved_files:
             st.write("📎 تم رفع المرفقات:")
             st.write(saved_files)
+
+# ====== استشارة الذكاء الاصطناعي ======
 st.markdown("---")
 st.subheader("🤖 استشارة القاضي الذكي")
 
@@ -87,7 +98,21 @@ if st.button("استشارة AI Agent"):
             result = response['choices'][0]['message']['content']
             st.success("✅ تم توليد الحكم الذكي:")
             st.text_area("📋 الحكم الذكي المقترح:", result, height=300)
+
+            # حفظ الحكم كمقترح سابقة إذا أراد المستخدم
+            if st.button("📌 حفظ الحكم الذكي كسابقة"):
+                ai_case = {
+                    "رقم_القضية": case_number.strip(),
+                    "نوع_القضية": case_type,
+                    "المواد": [x.strip() for x in legal_articles.split(",")],
+                    "الوصف": summary.strip(),
+                    "القرار": result[:150],
+                    "الحيثيات": result.strip(),
+                    "الكلمات_المفتاحية": [x.strip() for x in keywords.split(",")],
+                    "المرفقات": []
+                }
+                save_precedent(ai_case)
+                st.success("📥 تم حفظ الحكم الذكي كسابقة قضائية.")
+
         except Exception as e:
-            st.error(f"❌ حدث خطأ: {e}")
-
-
+            st.error(f"❌ حدث خطأ أثناء استشارة الذكاء الاصطناعي: {e}")
