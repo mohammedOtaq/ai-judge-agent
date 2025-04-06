@@ -1,3 +1,4 @@
+import streamlit as st
 import json
 import os
 import openai
@@ -111,6 +112,5 @@ if st.button("استشارة AI Agent"):
                 }
                 save_precedent(ai_case)
                 st.success("📥 تم حفظ الحكم الذكي كسابقة قضائية.")
-
         except Exception as e:
-            st.error(f"❌ حدث خطأ أثناء استشارة الذكاء الاصطناعي: {e}") كل شيء واضح 
+            st.error(f"❌ حدث خطأ أثناء استشارة الذكاء الاصطناعي: {e}")
