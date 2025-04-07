@@ -1,22 +1,11 @@
+
 import streamlit as st
-import os
 import json
-import openai
-from dotenv import load_dotenv
+import os
 
-# تحميل متغيرات البيئة من .env (للعمل محليًا)
-load_dotenv()
-# استخدم st.secrets إذا كان مفتاحك موجود في أسرار Streamlit، وإلا استخدم المتغيرات البيئية
-if "OPENAI_API_KEY" in st.secrets:
-    openai.api_key = st.secrets["OPENAI_API_KEY"]
-else:
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-
-# إعداد الصفحة
 st.set_page_config(page_title="إضافة سابقة", layout="centered")
 st.title("➕ إضافة سابقة قضائية جديدة")
 
-# مسارات البيانات
 file_path = "precedents.json"
 attachments_dir = "attachments"
 os.makedirs(attachments_dir, exist_ok=True)
@@ -33,7 +22,6 @@ def save_precedent(new_entry):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(precedents, f, ensure_ascii=False, indent=2)
 
-# نموذج إدخال سابقة قضائية
 with st.form("precedent_form"):
     case_number = st.text_input("📁 رقم القضية", "999/2025")
     case_type = st.selectbox("⚖️ نوع القضية", ["مدني جزئي", "مدني كلي", "تجاري", "إيجار"])
@@ -42,13 +30,15 @@ with st.form("precedent_form"):
     decision = st.text_area("📌 القرار")
     reasoning = st.text_area("📖 الحيثيات")
     keywords = st.text_input("🔍 كلمات مفتاحية (مفصولة بفاصلة)", "إيجار, عقد, ضرر")
+
     uploaded_files = st.file_uploader(
-        "📎 مرفقات القضية (PDF، صور، أو Word)",
+        "📎 مرفقات القضية (PDF، صور، أو Word)", 
         type=["pdf", "jpg", "png", "jpeg", "docx"],
         accept_multiple_files=True
     )
+
     submitted = st.form_submit_button("💾 حفظ السابقة")
-    
+
     if submitted:
         saved_files = []
         for file in uploaded_files:
@@ -56,7 +46,7 @@ with st.form("precedent_form"):
             with open(file_path_out, "wb") as f:
                 f.write(file.getbuffer())
             saved_files.append(file.name)
-            
+
         new_case = {
             "رقم_القضية": case_number.strip(),
             "نوع_القضية": case_type,
@@ -67,13 +57,12 @@ with st.form("precedent_form"):
             "الكلمات_المفتاحية": [x.strip() for x in keywords.split(",")],
             "المرفقات": saved_files
         }
-        
+
         save_precedent(new_case)
         st.success("✅ تم حفظ السابقة القضائية والمرفقات بنجاح!")
         if saved_files:
             st.write("📎 تم رفع المرفقات:")
             st.write(saved_files)
-
 st.markdown("---")
 st.subheader("🤖 استشارة القاضي الذكي")
 
@@ -85,7 +74,7 @@ if st.button("استشارة AI Agent"):
 الوصف: {summary}
 الحيثيات: {reasoning}
 ما هو الحكم المتوقع لهذه القضية مع التسبيب؟"""
-    
+
     with st.spinner("🤖 جاري تحليل القضية..."):
         try:
             response = openai.ChatCompletion.create(
