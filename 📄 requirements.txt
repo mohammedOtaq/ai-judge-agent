@@ -1,5 +1,2 @@
 streamlit
-openai
-python-dotenv
-fpdf
-requests
+openai>=1.2.0
