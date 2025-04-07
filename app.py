@@ -1,11 +1,16 @@
 import streamlit as st
 import openai
-import os
 
-# تعيين مفتاح الـ API باستخدام st.secrets أو متغير بيئة
-# الخيار المفضل للتطبيقات المُستضافة: 
-openai.api_key = st.secrets["OPENAI_API_KEY"]
-# بديل: openai.api_key = os.getenv("OPENAI_API_KEY")
+# التحقق من مفتاح الـ API: نستخدم st.secrets إذا كان موجودًا، وإلا يُطلب من المستخدم إدخاله.
+if "OPENAI_API_KEY" in st.secrets:
+    api_key = st.secrets["OPENAI_API_KEY"]
+else:
+    api_key = st.text_input("أدخل مفتاح OpenAI API الخاص بك:", type="password")
+    if not api_key:
+        st.info("يرجى إدخال مفتاح OpenAI API للمتابعة.")
+        st.stop()
+
+openai.api_key = api_key
 
 # تصميم واجهة المستخدم
 st.title("القاضي الذكي")
@@ -20,7 +25,7 @@ def analyze_case(inquiry, case_text):
             {"role": "user", "content": f"الاستفسار: {inquiry}\nتفاصيل القضية: {case_text}"}
         ]
     )
-    return response.choices[0].message['content']
+    return response.choices[0].message["content"]
 
 if st.button("تحليل القضية"):
     st.write("جارٍ تحليل القضية...")
