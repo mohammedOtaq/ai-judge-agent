@@ -1,45 +1,116 @@
 import streamlit as st
-from openai import OpenAI
+import json
+import os
+import openai
 
-# إعداد صفحة Streamlit
-st.set_page_config(page_title="القاضي الذكي", layout="centered")
-st.title("⚖️ القاضي الذكي - استشارة قانونية بالذكاء الاصطناعي")
+# ✅ تحميل مفتاح OpenAI من secrets.toml
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# تحميل مفتاح OpenAI من ملف الأسرار
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# إعداد الصفحة
+st.set_page_config(page_title="إضافة سابقة + استشارة", layout="centered")
+st.title("➕ إضافة سابقة قضائية + استشارة القاضي الذكي")
 
-# نموذج إدخال البيانات
-with st.form("case_form"):
-    case_number = st.text_input("📁 رقم القضية", "123/2025")
-    case_type = st.selectbox("⚖️ نوع القضية", ["مدني", "تجاري", "جنائي"])
-    summary = st.text_area("📝 ملخص القضية")
-    submitted = st.form_submit_button("🔍 استشارة القاضي الذكي")
+# مسارات البيانات
+file_path = "precedents.json"
+attachments_dir = "attachments"
+os.makedirs(attachments_dir, exist_ok=True)
+
+# تحميل السوابق
+def load_precedents():
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+# حفظ سابقة جديدة
+def save_precedent(new_entry):
+    precedents = load_precedents()
+    precedents.append(new_entry)
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(precedents, f, ensure_ascii=False, indent=2)
+
+# ====== نموذج إدخال سابقة ======
+with st.form("precedent_form"):
+    case_number = st.text_input("📁 رقم القضية", "999/2025")
+    case_type = st.selectbox("⚖️ نوع القضية", ["مدني جزئي", "مدني كلي", "تجاري", "إيجار"])
+    legal_articles = st.text_input("📚 المواد القانونية (مفصولة بفاصلة)", "267,742")
+    summary = st.text_area("📝 وصف مختصر للقضية")
+    decision = st.text_area("📌 القرار")
+    reasoning = st.text_area("📖 الحيثيات")
+    keywords = st.text_input("🔍 كلمات مفتاحية (مفصولة بفاصلة)", "إيجار, عقد, ضرر")
+
+    uploaded_files = st.file_uploader(
+        "📎 مرفقات القضية (PDF، صور، أو Word)",
+        type=["pdf", "jpg", "png", "jpeg", "docx"],
+        accept_multiple_files=True
+    )
+
+    submitted = st.form_submit_button("💾 حفظ السابقة")
 
     if submitted:
-        # صياغة الطلب إلى النموذج
-        prompt = f"""
-        هذه قضية:
-        رقم القضية: {case_number}
-        نوعها: {case_type}
-        ملخص القضية: {summary}
-        ما هو الحكم المتوقع مع التسبيب القانوني؟
-        """
+        saved_files = []
+        for file in uploaded_files:
+            file_path_out = os.path.join(attachments_dir, file.name)
+            with open(file_path_out, "wb") as f:
+                f.write(file.getbuffer())
+            saved_files.append(file.name)
 
-        with st.spinner("🤖 جاري تحليل القضية..."):
-            try:
-                # إرسال الطلب إلى OpenAI باستخدام GPT-4o
-                response = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[
-                        {"role": "system", "content": "أنت قاضٍ محترف متخصص في إصدار الأحكام القانونية."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.4
-                )
+        new_case = {
+            "رقم_القضية": case_number.strip(),
+            "نوع_القضية": case_type,
+            "المواد": [x.strip() for x in legal_articles.split(",")],
+            "الوصف": summary.strip(),
+            "القرار": decision.strip(),
+            "الحيثيات": reasoning.strip(),
+            "الكلمات_المفتاحية": [x.strip() for x in keywords.split(",")],
+            "المرفقات": saved_files
+        }
 
-                result = response.choices[0].message.content
-                st.success("✅ تم إصدار الحكم المقترح:")
-                st.text_area("📋 الحكم الذكي:", result, height=300)
+        save_precedent(new_case)
+        st.success("✅ تم حفظ السابقة القضائية والمرفقات بنجاح!")
+        if saved_files:
+            st.write("📎 تم رفع المرفقات:")
+            st.write(saved_files)
 
-            except Exception as e:
-                st.error(f"❌ حدث خطأ: {e}")
+# ====== استشارة القاضي الذكي عبر OpenAI GPT ======
+st.markdown("---")
+st.subheader("🤖 استشارة القاضي الذكي")
+
+if st.button("استشارة AI Agent"):
+    prompt = f"""هذه قضية جديدة:
+رقم القضية: {case_number}
+نوعها: {case_type}
+المواد القانونية: {legal_articles}
+الوصف: {summary}
+الحيثيات: {reasoning}
+ما هو الحكم المتوقع لهذه القضية مع التسبيب؟"""
+
+    with st.spinner("🤖 جاري تحليل القضية..."):
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "أنت قاضٍ خبير في القانون المدني. أجب بصياغة رسمية دقيقة."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.4
+            )
+            result = response['choices'][0]['message']['content']
+            st.success("✅ تم توليد الحكم الذكي:")
+            st.text_area("📋 الحكم الذكي المقترح:", result, height=300)
+
+            if st.button("📌 حفظ الحكم الذكي كسابقة"):
+                ai_case = {
+                    "رقم_القضية": case_number.strip(),
+                    "نوع_القضية": case_type,
+                    "المواد": [x.strip() for x in legal_articles.split(",")],
+                    "الوصف": summary.strip(),
+                    "القرار": result[:150],
+                    "الحيثيات": result.strip(),
+                    "الكلمات_المفتاحية": [x.strip() for x in keywords.split(",")],
+                    "المرفقات": []
+                }
+                save_precedent(ai_case)
+                st.success("📥 تم حفظ الحكم الذكي كسابقة قضائية.")
+        except Exception as e:
+            st.error(f"❌ حدث خطأ أثناء استشارة الذكاء الاصطناعي: {e}")
