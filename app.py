@@ -1,14 +1,8 @@
+
 import streamlit as st
-import os
 import json
-import openai
-from dotenv import load_dotenv
+import os
 
-# تحميل مفتاح OpenAI من ملف .env
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-# إعداد الصفحة
 st.set_page_config(page_title="إضافة سابقة", layout="centered")
 st.title("➕ إضافة سابقة قضائية جديدة")
 
@@ -69,7 +63,6 @@ with st.form("precedent_form"):
         if saved_files:
             st.write("📎 تم رفع المرفقات:")
             st.write(saved_files)
-
 st.markdown("---")
 st.subheader("🤖 استشارة القاضي الذكي")
 
