@@ -92,4 +92,5 @@ if st.button("استشارة AI Agent"):
             result = response['choices'][0]['message']['content']
             st.success("✅ تم توليد الحكم الذكي:")
             st.text_area("📋 الحكم الذكي المقترح:", result, height=300)
-        except Exception
+        except Exception as e:  # Corrected line
+            st.error(f"❌ حدث خطأ: {e}")
