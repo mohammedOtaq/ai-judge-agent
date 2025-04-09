@@ -1,27 +1,50 @@
-
 import streamlit as st
 import json
 import os
+import re
+from datetime import datetime
 
+# إعداد الصفحة
 st.set_page_config(page_title="إضافة سابقة", layout="centered")
 st.title("➕ إضافة سابقة قضائية جديدة")
 
+# تحديد مسار ملف السوابق ومجلد المرفقات
 file_path = "precedents.json"
 attachments_dir = "attachments"
-os.makedirs(attachments_dir, exist_ok=True)
 
+# إنشاء مجلد المرفقات مع معالجة الأخطاء
+try:
+    os.makedirs(attachments_dir, exist_ok=True)
+except Exception as e:
+    st.error(f"❌ تعذر إنشاء مجلد المرفقات: {e}")
+
+# دالة لتحميل السوابق
 def load_precedents():
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return []
     return []
 
+# دالة لحفظ سابقة جديدة
 def save_precedent(new_entry):
     precedents = load_precedents()
     precedents.append(new_entry)
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(precedents, f, ensure_ascii=False, indent=2)
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(precedents, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        st.error(f"❌ تعذر حفظ السوابق: {e}")
 
+# دالة لتنقية أسماء الملفات لتجنب الأحرف الخاصة وتكرار الأسماء
+def sanitize_filename(filename):
+    filename = re.sub(r'[^\w\-_\.]', '_', filename)
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    return f"{timestamp}_{filename}"
+
+# إنشاء النموذج باستخدام st.form
 with st.form("precedent_form"):
     case_number = st.text_input("📁 رقم القضية", "999/2025")
     case_type = st.selectbox("⚖️ نوع القضية", ["مدني جزئي", "مدني كلي", "تجاري", "إيجار"])
@@ -31,6 +54,7 @@ with st.form("precedent_form"):
     reasoning = st.text_area("📖 الحيثيات")
     keywords = st.text_input("🔍 كلمات مفتاحية (مفصولة بفاصلة)", "إيجار, عقد, ضرر")
 
+    # رفع المرفقات
     uploaded_files = st.file_uploader(
         "📎 مرفقات القضية (PDF، صور، أو Word)", 
         type=["pdf", "jpg", "png", "jpeg", "docx"],
@@ -40,53 +64,38 @@ with st.form("precedent_form"):
     submitted = st.form_submit_button("💾 حفظ السابقة")
 
     if submitted:
-        saved_files = []
-        for file in uploaded_files:
-            file_path_out = os.path.join(attachments_dir, file.name)
-            with open(file_path_out, "wb") as f:
-                f.write(file.getbuffer())
-            saved_files.append(file.name)
+        # التحقق من تعبئة الحقول الإلزامية
+        if not case_number.strip() or not summary.strip() or not decision.strip() or not reasoning.strip():
+            st.error("❌ يرجى ملء جميع الحقول الإلزامية قبل الحفظ.")
+        else:
+            # تهيئة قائمة لتخزين أسماء الملفات المرفوعة
+            saved_files = []
+            if uploaded_files:
+                for file in uploaded_files:
+                    try:
+                        sanitized_name = sanitize_filename(file.name)
+                        file_path_out = os.path.join(attachments_dir, sanitized_name)
+                        with open(file_path_out, "wb") as f:
+                            f.write(file.getbuffer())
+                        saved_files.append(sanitized_name)
+                    except Exception as e:
+                        st.error(f"❌ تعذر حفظ الملف {file.name}: {e}")
 
-        new_case = {
-            "رقم_القضية": case_number.strip(),
-            "نوع_القضية": case_type,
-            "المواد": [x.strip() for x in legal_articles.split(",")],
-            "الوصف": summary.strip(),
-            "القرار": decision.strip(),
-            "الحيثيات": reasoning.strip(),
-            "الكلمات_المفتاحية": [x.strip() for x in keywords.split(",")],
-            "المرفقات": saved_files
-        }
+            # إنشاء كائن السابقة القضائية
+            new_case = {
+                "رقم_القضية": case_number.strip(),
+                "نوع_القضية": case_type,
+                "المواد": [x.strip() for x in legal_articles.split(",")],
+                "الوصف": summary.strip(),
+                "القرار": decision.strip(),
+                "الحيثيات": reasoning.strip(),
+                "الكلمات_المفتاحية": [x.strip() for x in keywords.split(",")],
+                "المرفقات": saved_files
+            }
 
-        save_precedent(new_case)
-        st.success("✅ تم حفظ السابقة القضائية والمرفقات بنجاح!")
-        if saved_files:
-            st.write("📎 تم رفع المرفقات:")
-            st.write(saved_files)
-st.markdown("---")
-st.subheader("🤖 استشارة القاضي الذكي")
-
-if st.button("استشارة AI Agent"):
-    prompt = f"""هذه قضية جديدة:
-رقم القضية: {case_number}
-نوعها: {case_type}
-المواد القانونية: {legal_articles}
-الوصف: {summary}
-الحيثيات: {reasoning}
-ما هو الحكم المتوقع لهذه القضية مع التسبيب؟"""
-
-    with st.spinner("🤖 جاري تحليل القضية..."):
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "أنت قاضٍ خبير في القانون المدني. أجب بصياغة رسمية دقيقة."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.4
-            )
-            result = response['choices'][0]['message']['content']
-            st.success("✅ تم توليد الحكم الذكي:")
-            st.text_area("📋 الحكم الذكي المقترح:", result, height=300)
-        except Exception as e:
-            st.error(f"❌ حدث خطأ: {e}")
+            # حفظ السابقة في ملف JSON
+            save_precedent(new_case)
+            st.success("✅ تم حفظ السابقة القضائية والمرفقات بنجاح!")
+            if saved_files:
+                st.write("📎 تم رفع المرفقات:")
+                st.write(saved_files)
