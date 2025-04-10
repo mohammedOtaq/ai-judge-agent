@@ -1,92 +1,74 @@
-
 import streamlit as st
-import json
-import os
+from openai import OpenAI
+from fpdf import FPDF
+import tempfile
 
-st.set_page_config(page_title="إضافة سابقة", layout="centered")
-st.title("➕ إضافة سابقة قضائية جديدة")
+# ✅ مفتاح OpenAI مباشر (تأكد من سريته لاحقًا)
+client = OpenAI(api_key="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")
 
-file_path = "precedents.json"
-attachments_dir = "attachments"
-os.makedirs(attachments_dir, exist_ok=True)
+# ✅ دالة توليد الحكم القضائي من GPT
+def ask_judge_agent(user_input):
+    prompt = f"""
+أنت قاضٍ مدني محترف تصدر الأحكام بأسلوب قانوني منضبط.
+اقرأ القضية التالية التي قدمها المستخدم، ثم أصدِر حكمك الكامل متضمنًا:
+- القرار القضائي
+- الحيثيات القانونية والواقعية
+- الاستناد إلى السوابق إن أمكن
 
-def load_precedents():
-    if os.path.exists(file_path):
-        with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
+نص الدعوى:
+{user_input}
 
-def save_precedent(new_entry):
-    precedents = load_precedents()
-    precedents.append(new_entry)
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(precedents, f, ensure_ascii=False, indent=2)
+الحكم:
+"""
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"❌ خطأ أثناء الاتصال بـ OpenAI: {e}"
 
-with st.form("precedent_form"):
-    case_number = st.text_input("📁 رقم القضية", "999/2025")
-    case_type = st.selectbox("⚖️ نوع القضية", ["مدني جزئي", "مدني كلي", "تجاري", "إيجار"])
-    legal_articles = st.text_input("📚 المواد القانونية (مفصولة بفاصلة)", "267,742")
-    summary = st.text_area("📝 وصف مختصر للقضية")
-    decision = st.text_area("📌 القرار")
-    reasoning = st.text_area("📖 الحيثيات")
-    keywords = st.text_input("🔍 كلمات مفتاحية (مفصولة بفاصلة)", "إيجار, عقد, ضرر")
+# ✅ دالة تصدير الحكم إلى PDF
+def export_to_pdf(hukm_text):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    for line in hukm_text.split("\n"):
+        pdf.multi_cell(0, 10, line)
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    pdf.output(temp_file.name)
+    return temp_file.name
 
-    uploaded_files = st.file_uploader(
-        "📎 مرفقات القضية (PDF، صور، أو Word)", 
-        type=["pdf", "jpg", "png", "jpeg", "docx"],
-        accept_multiple_files=True
-    )
+# ✅ واجهة Streamlit
+st.set_page_config(page_title="القاضي الذكي", layout="centered")
+st.title("⚖️ استشارة القاضي الذكي")
 
-    submitted = st.form_submit_button("💾 حفظ السابقة")
+# ✍️ إدخال نص القضية من المستخدم
+user_input = st.text_area(
+    "✍️ اكتب هنا وقائع القضية أو النزاع:",
+    height=300,
+    placeholder="مثال: قام المدعى بتأجير سيارة للمدعى عليه مقابل مبلغ وقدره..."
+)
 
-    if submitted:
-        saved_files = []
-        for file in uploaded_files:
-            file_path_out = os.path.join(attachments_dir, file.name)
-            with open(file_path_out, "wb") as f:
-                f.write(file.getbuffer())
-            saved_files.append(file.name)
+# 🧠 زر إصدار الحكم
+if st.button("🧠 إصدار الحكم من القاضي الذكي"):
+    if user_input.strip() == "":
+        st.warning("يرجى كتابة نص القضية أولاً.")
+    else:
+        with st.spinner("📚 يتم قراءة القضية وتحليلها..."):
+            result = ask_judge_agent(user_input)
+            st.success("✅ تم إصدار الحكم بنجاح")
+            st.subheader("📜 الحكم الصادر:")
+            st.text_area("الناتج:", result, height=400)
 
-        new_case = {
-            "رقم_القضية": case_number.strip(),
-            "نوع_القضية": case_type,
-            "المواد": [x.strip() for x in legal_articles.split(",")],
-            "الوصف": summary.strip(),
-            "القرار": decision.strip(),
-            "الحيثيات": reasoning.strip(),
-            "الكلمات_المفتاحية": [x.strip() for x in keywords.split(",")],
-            "المرفقات": saved_files
-        }
-
-        save_precedent(new_case)
-        st.success("✅ تم حفظ السابقة القضائية والمرفقات بنجاح!")
-        if saved_files:
-            st.write("📎 تم رفع المرفقات:")
-            st.write(saved_files)
-st.markdown("---")
-st.subheader("🤖 استشارة القاضي الذكي")
-
-if st.button("استشارة AI Agent"):
-    prompt = f"""هذه قضية جديدة:
-رقم القضية: {case_number}
-نوعها: {case_type}
-المواد القانونية: {legal_articles}
-الوصف: {summary}
-الحيثيات: {reasoning}
-ما هو الحكم المتوقع لهذه القضية مع التسبيب؟"""
-
-    with st.spinner("🤖 جاري تحليل القضية..."):
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "أنت قاضٍ خبير في القانون المدني. أجب بصياغة رسمية دقيقة."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.4
-            )
-            result = response['choices'][0]['message']['content']
-            st.success("✅ تم توليد الحكم الذكي:")
-            st.text_area("📋 الحكم الذكي المقترح:", result, height=300)
-        except Exception as e:
-            st.error(f"❌ حدث خطأ: {e}")
+            # 📄 تحميل PDF
+            pdf_path = export_to_pdf(result)
+            with open(pdf_path, "rb") as pdf_file:
+                st.download_button(
+                    label="📥 تحميل الحكم كـ PDF",
+                    data=pdf_file,
+                    file_name="الحكم_القضائي.pdf",
+                    mime="application/pdf"
+                )
