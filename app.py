@@ -1,12 +1,10 @@
 import streamlit as st
 from openai import OpenAI
-from fpdf import FPDF
-import tempfile
 
-# ✅ مفتاح OpenAI مباشر (تأكد من سريته لاحقًا)
-client = OpenAI(api_key="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")
+# ✅ مفتاح OpenAI مباشر
+client = OpenAI(api_key="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")
 
-# ✅ دالة توليد الحكم القضائي من GPT
+# ✅ توليد الحكم
 def ask_judge_agent(user_input):
     prompt = f"""
 أنت قاضٍ مدني محترف تصدر الأحكام بأسلوب قانوني منضبط.
@@ -30,45 +28,17 @@ def ask_judge_agent(user_input):
     except Exception as e:
         return f"❌ خطأ أثناء الاتصال بـ OpenAI: {e}"
 
-# ✅ دالة تصدير الحكم إلى PDF
-def export_to_pdf(hukm_text):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    for line in hukm_text.split("\n"):
-        pdf.multi_cell(0, 10, line)
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    pdf.output(temp_file.name)
-    return temp_file.name
-
-# ✅ واجهة Streamlit
+# ✅ واجهة المستخدم
 st.set_page_config(page_title="القاضي الذكي", layout="centered")
 st.title("⚖️ استشارة القاضي الذكي")
 
-# ✍️ إدخال نص القضية من المستخدم
-user_input = st.text_area(
-    "✍️ اكتب هنا وقائع القضية أو النزاع:",
-    height=300,
-    placeholder="مثال: قام المدعى بتأجير سيارة للمدعى عليه مقابل مبلغ وقدره..."
-)
+user_input = st.text_area("✍️ اكتب هنا وقائع القضية أو النزاع:", height=300, placeholder="مثال: قام المدعى بتأجير سيارة للمدعى عليه مقابل مبلغ...")
 
-# 🧠 زر إصدار الحكم
 if st.button("🧠 إصدار الحكم من القاضي الذكي"):
     if user_input.strip() == "":
         st.warning("يرجى كتابة نص القضية أولاً.")
     else:
-        with st.spinner("📚 يتم قراءة القضية وتحليلها..."):
+        with st.spinner("📚 يتم قراءة القضية..."):
             result = ask_judge_agent(user_input)
-            st.success("✅ تم إصدار الحكم بنجاح")
             st.subheader("📜 الحكم الصادر:")
             st.text_area("الناتج:", result, height=400)
-
-            # 📄 تحميل PDF
-            pdf_path = export_to_pdf(result)
-            with open(pdf_path, "rb") as pdf_file:
-                st.download_button(
-                    label="📥 تحميل الحكم كـ PDF",
-                    data=pdf_file,
-                    file_name="الحكم_القضائي.pdf",
-                    mime="application/pdf"
-                )
