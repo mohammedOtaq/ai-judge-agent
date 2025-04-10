@@ -4,7 +4,7 @@ from fpdf import FPDF
 import tempfile
 
 # ✅ مفتاح OpenAI مباشر (تأكد من سريته لاحقًا)
-client = OpenAI(api_key="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")
+client = OpenAI(api_key="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")
 
 # ✅ دالة توليد الحكم القضائي من GPT
 def ask_judge_agent(user_input):
