@@ -1,10 +1,10 @@
-import streamlit as st
 from openai import OpenAI
 
-# ✅ مفتاح OpenAI مباشر
-client = OpenAI(api_key="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")
+# ✅ المفتاح مباشرة أو من userdata
+api_key = "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"
 
-# ✅ توليد الحكم
+client = OpenAI(api_key=api_key)
+
 def ask_judge_agent(user_input):
     prompt = f"""
 أنت قاضٍ مدني محترف تصدر الأحكام بأسلوب قانوني منضبط.
@@ -28,17 +28,14 @@ def ask_judge_agent(user_input):
     except Exception as e:
         return f"❌ خطأ أثناء الاتصال بـ OpenAI: {e}"
 
-# ✅ واجهة المستخدم
-st.set_page_config(page_title="القاضي الذكي", layout="centered")
-st.title("⚖️ استشارة القاضي الذكي")
+# ✅ تشغيل داخل Colab
+print("✍️ أدخل نص الدعوى:")
+user_input = input()
 
-user_input = st.text_area("✍️ اكتب هنا وقائع القضية أو النزاع:", height=300, placeholder="مثال: قام المدعى بتأجير سيارة للمدعى عليه مقابل مبلغ...")
-
-if st.button("🧠 إصدار الحكم من القاضي الذكي"):
-    if user_input.strip() == "":
-        st.warning("يرجى كتابة نص القضية أولاً.")
-    else:
-        with st.spinner("📚 يتم قراءة القضية..."):
-            result = ask_judge_agent(user_input)
-            st.subheader("📜 الحكم الصادر:")
-            st.text_area("الناتج:", result, height=400)
+if user_input.strip() == "":
+    print("⚠️ يجب إدخال نص القضية.")
+else:
+    print("🔎 يتم تحليل الدعوى...")
+    result = ask_judge_agent(user_input)
+    print("\n📜 الحكم الصادر:\n")
+    print(result)
