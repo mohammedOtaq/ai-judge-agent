@@ -1,10 +1,15 @@
-from openai import OpenAI
+import streamlit as st
+import openai
+import os
+from dotenv import load_dotenv
 
-# ✅ المفتاح مباشرة أو من userdata
-api_key = "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"
+# تحميل متغيرات البيئة من ملف .env
+load_dotenv()
 
-client = OpenAI(api_key=api_key)
+# استدعاء مفتاح OpenAI
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
+# دالة إصدار الحكم
 def ask_judge_agent(user_input):
     prompt = f"""
 أنت قاضٍ مدني محترف تصدر الأحكام بأسلوب قانوني منضبط.
@@ -19,23 +24,27 @@ def ask_judge_agent(user_input):
 الحكم:
 """
     try:
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.4
+            temperature=0.3
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
         return f"❌ خطأ أثناء الاتصال بـ OpenAI: {e}"
 
-# ✅ تشغيل داخل Colab
-print("✍️ أدخل نص الدعوى:")
-user_input = input()
+# واجهة Streamlit
+st.set_page_config(page_title="⚖️ القاضي الذكي", layout="centered")
+st.title("⚖️ القاضي الذكي")
 
-if user_input.strip() == "":
-    print("⚠️ يجب إدخال نص القضية.")
-else:
-    print("🔎 يتم تحليل الدعوى...")
-    result = ask_judge_agent(user_input)
-    print("\n📜 الحكم الصادر:\n")
-    print(result)
+user_input = st.text_area("✍️ اكتب هنا وقائع القضية أو النزاع:", height=300)
+
+if st.button("🧠 إصدار الحكم"):
+    if not user_input.strip():
+        st.warning("يرجى كتابة نص القضية.")
+    else:
+        with st.spinner("📚 يتم تحليل القضية..."):
+            result = ask_judge_agent(user_input)
+            st.success("✅ تم إصدار الحكم.")
+            st.subheader("📜 الحكم الصادر:")
+            st.text_area("📜 الناتج:", result, height=400)
