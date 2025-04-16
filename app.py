@@ -2,7 +2,7 @@ import streamlit as st
 from dotenv import load_dotenv
 import os
 import openai
-import docx
+from docx import Document
 import fitz  # PyMuPDF
 
 # ✅ إعداد صفحة Streamlit
@@ -12,7 +12,7 @@ st.set_page_config(page_title="⚖️ القاضي الذكي", layout="centered
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# دالة استدعاء GPT لإصدار الحكم
+# 🧠 دالة استدعاء GPT لإصدار الحكم
 def ask_judge_agent(user_input):
     prompt = f"""
 أنت قاضٍ مدني محترف تصدر الأحكام بأسلوب قانوني منضبط.
@@ -36,7 +36,7 @@ def ask_judge_agent(user_input):
     except Exception as e:
         return f"❌ خطأ أثناء الاتصال بـ OpenAI:\n{e}"
 
-# 🧠 دوال استخراج النص من الملفات
+# 📄 قراءة ملفات PDF
 def extract_text_from_pdf(uploaded_file):
     text = ""
     with fitz.open(stream=uploaded_file.read(), filetype="pdf") as doc:
@@ -44,25 +44,33 @@ def extract_text_from_pdf(uploaded_file):
             text += page.get_text()
     return text
 
+# 📄 قراءة ملفات Word
 def extract_text_from_docx(uploaded_file):
-    doc = docx.Document(uploaded_file)
+    doc = Document(uploaded_file)
     return "\n".join([para.text for para in doc.paragraphs])
 
-# 🖥️ واجهة المستخدم
+# 🖥️ واجهة Streamlit
 st.title("⚖️ القاضي الذكي")
 
+# اختيار طريقة الإدخال
 input_method = st.radio("📎 اختر طريقة إدخال القضية:", ["كتابة يدوية", "رفع ملف PDF / Word"])
 
 user_input = ""
 
+# الكتابة اليدوية
 if input_method == "كتابة يدوية":
     user_input = st.text_area("✍️ اكتب هنا وقائع القضية أو النزاع:", height=300)
+
+# رفع الملفات
 else:
     uploaded_file = st.file_uploader("📄 ارفع ملف PDF أو Word", type=["pdf", "docx"])
     if uploaded_file:
         if uploaded_file.type == "application/pdf":
             user_input = extract_text_from_pdf(uploaded_file)
-        elif uploaded_file.type in ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"]:
+        elif uploaded_file.type in [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/msword"
+        ]:
             user_input = extract_text_from_docx(uploaded_file)
 
         if user_input:
@@ -79,3 +87,29 @@ if st.button("🧠 إصدار الحكم"):
             st.success("✅ تم إصدار الحكم.")
             st.subheader("📜 الحكم الصادر:")
             st.text_area("📜 الناتج:", result, height=400)
+
+            # 🔄 التفاعل بعد الحكم
+            st.markdown("---")
+            st.subheader("🔄 هل توافق على الحكم؟ أو لديك توضيح إضافي؟")
+
+            with st.form("response_form"):
+                user_reply = st.text_area("🗣️ اكتب ملاحظتك أو اعتراضك هنا:", height=150)
+                submitted = st.form_submit_button("📨 إرسال للمراجعة")
+
+                if submitted:
+                    with st.spinner("🤖 يتم مراجعة ملاحظتك من قبل القاضي الذكي..."):
+                        follow_up_prompt = f"""
+قمت بإصدار الحكم التالي:
+{result}
+
+ثم قدم المستخدم التوضيح التالي:
+{user_reply}
+
+رجاءً راجع التوضيح، وأعد صياغة الحكم أو فسّره بشكل إضافي إذا لزم الأمر.
+"""
+                        follow_up = ask_judge_agent(follow_up_prompt)
+                        st.success("✅ تم مراجعة الملاحظة.")
+                        st.subheader("📌 رد القاضي الذكي:")
+                        st.text_area("📬 الرد:", follow_up, height=300)
+
+
