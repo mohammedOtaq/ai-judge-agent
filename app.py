@@ -84,32 +84,32 @@ if st.button("🧠 إصدار الحكم"):
     else:
         with st.spinner("📚 يتم تحليل القضية..."):
             result = ask_judge_agent(user_input)
+            st.session_state['الحكم'] = result  # 🧠 نحفظ الحكم في session
             st.success("✅ تم إصدار الحكم.")
             st.subheader("📜 الحكم الصادر:")
             st.text_area("📜 الناتج:", result, height=400)
 
-            # 🔄 التفاعل بعد الحكم
-            st.markdown("---")
-            st.subheader("🔄 هل توافق على الحكم؟ أو لديك توضيح إضافي؟")
+# 🔄 التفاعل مع الحكم
+if "الحكم" in st.session_state:
+    st.markdown("---")
+    st.subheader("🔄 هل توافق على الحكم؟ أو لديك توضيح إضافي؟")
 
-            with st.form("response_form"):
-                user_reply = st.text_area("🗣️ اكتب ملاحظتك أو اعتراضك هنا:", height=150)
-                submitted = st.form_submit_button("📨 إرسال للمراجعة")
+    with st.form("response_form"):
+        user_reply = st.text_area("🗣️ اكتب ملاحظتك أو اعتراضك هنا:", height=150)
+        submitted = st.form_submit_button("📨 إرسال للمراجعة")
 
-                if submitted:
-                    with st.spinner("🤖 يتم مراجعة ملاحظتك من قبل القاضي الذكي..."):
-                        follow_up_prompt = f"""
+        if submitted:
+            with st.spinner("🤖 يتم مراجعة ملاحظتك من قبل القاضي الذكي..."):
+                follow_up_prompt = f"""
 قمت بإصدار الحكم التالي:
-{result}
+{st.session_state['الحكم']}
 
 ثم قدم المستخدم التوضيح التالي:
 {user_reply}
 
 رجاءً راجع التوضيح، وأعد صياغة الحكم أو فسّره بشكل إضافي إذا لزم الأمر.
 """
-                        follow_up = ask_judge_agent(follow_up_prompt)
-                        st.success("✅ تم مراجعة الملاحظة.")
-                        st.subheader("📌 رد القاضي الذكي:")
-                        st.text_area("📬 الرد:", follow_up, height=300)
-
-
+                follow_up = ask_judge_agent(follow_up_prompt)
+                st.success("✅ تم مراجعة الملاحظة.")
+                st.subheader("📌 رد القاضي الذكي:")
+                st.text_area("📬 الرد:", follow_up, height=300)
