@@ -131,3 +131,21 @@ if "الحكم" in st.session_state:
                 st.success("✅ تم مراجعة الملاحظة.")
                 st.subheader("📌 رد القاضي الذكي:")
                 st.text_area("📬 الرد:", follow_up, height=300)
+import streamlit as st
+import datetime
+
+st.title("⌛ اختبار التايمر")
+
+if "start_time" not in st.session_state:
+    st.session_state["start_time"] = datetime.datetime.now()
+
+elapsed = datetime.datetime.now() - st.session_state["start_time"]
+remaining = datetime.timedelta(seconds=10) - elapsed
+
+if remaining.total_seconds() > 0:
+    st.info(f"⏳ الوقت المتبقي لك: {str(remaining).split('.')[0]}")
+else:
+    st.warning("🕐 انتهى وقتك المجاني.")
+    st.stop()
+
+st.write("✅ تقدر تستخدم الموقع الآن.")
