@@ -4,6 +4,7 @@ import os
 import openai
 from docx import Document
 import fitz  # PyMuPDF
+from datetime import datetime, timedelta
 
 # ✅ إعداد صفحة Streamlit
 st.set_page_config(page_title="⚖️ القاضي الذكي", layout="centered")
@@ -11,6 +12,23 @@ st.set_page_config(page_title="⚖️ القاضي الذكي", layout="centered
 # تحميل المتغيرات البيئية
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# ✅ ⏰ التايمر يبدأ عند أول دخول للجلسة
+if "start_time" not in st.session_state:
+    st.session_state.start_time = datetime.now()
+
+# تحديد نهاية الوقت (غيّر seconds=10 إلى hours=1 لاحقًا)
+end_time = st.session_state.start_time + timedelta(seconds=10)  # للتجربة: 10 ثواني فقط
+
+# حساب الوقت المتبقي
+remaining_time = end_time - datetime.now()
+
+if remaining_time.total_seconds() > 0:
+    mins, secs = divmod(int(remaining_time.total_seconds()), 60)
+    st.info(f"🕒 تبقى من وقتك المجاني: {mins} دقيقة و {secs} ثانية")
+else:
+    st.error("⛔ انتهى وقت الاستخدام المجاني. الرجاء الترقية لمواصلة الاستخدام.")
+    st.stop()  # إيقاف التطبيق مؤقتًا
 
 # 🧠 دالة استدعاء GPT لإصدار الحكم
 def ask_judge_agent(user_input):
@@ -84,7 +102,7 @@ if st.button("🧠 إصدار الحكم"):
     else:
         with st.spinner("📚 يتم تحليل القضية..."):
             result = ask_judge_agent(user_input)
-            st.session_state['الحكم'] = result  # 🧠 نحفظ الحكم في session
+            st.session_state['الحكم'] = result
             st.success("✅ تم إصدار الحكم.")
             st.subheader("📜 الحكم الصادر:")
             st.text_area("📜 الناتج:", result, height=400)
