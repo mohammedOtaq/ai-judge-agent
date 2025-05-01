@@ -18,7 +18,7 @@ if "start_time" not in st.session_state:
     st.session_state.start_time = datetime.now(timezone.utc)
 
 # تحديد نهاية الوقت (تقدر تغيره من 10 ثواني إلى ساعة بعدين)
-end_time = st.session_state.start_time + timedelta(seconds=10)
+end_time = st.session_state.start_time + timedelta(hours=1)
 
 # حساب الوقت المتبقي
 remaining_time = end_time - datetime.now(timezone.utc)
