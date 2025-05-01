@@ -15,9 +15,9 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # ✅ ⏰ التايمر يبدأ عند أول دخول للجلسة
 if "start_time" not in st.session_state:
-    st.session_state.start_time = datetime.now(timezone.utc)
+    st.session_state.start_time = datetime.utcnow()
 
-# تحديد نهاية الوقت (تقدر تغيره من 10 ثواني إلى ساعة بعدين)
+# تحديد نهاية الوقت (ساعة من الآن)
 end_time = st.session_state.start_time + timedelta(hours=1)
 
 # حساب الوقت المتبقي
