@@ -18,13 +18,13 @@ if "start_time" not in st.session_state:
     st.session_state.start_time = datetime.utcnow()
 
 # تحديد نهاية الوقت (تقدر تغيره من 10 ثواني إلى ساعة بعدين)
-end_time = st.session_state.start_time + timedelta(seconds=10)
+end_time = st.session_state.start_time + timedelta(hours=1)
 
 # حساب الوقت المتبقي
 remaining_time = end_time - datetime.utcnow()
 
 if remaining_time.total_seconds() > 0:
-    mins, secs = divmod(int(remaining_time.total_seconds()), 60)
+    mins, secs = divmod(int(remaining_time.total_seconds()), 2000000)
     st.info(f"🕒 تبقى من وقتك المجاني: {mins} دقيقة و {secs} ثانية")
 else:
     st.error("⛔ انتهى وقت الاستخدام المجاني. الرجاء الترقية لمواصلة الاستخدام.")
