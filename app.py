@@ -4,7 +4,7 @@ import os
 import openai
 from docx import Document
 import fitz  # PyMuPDF
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # ✅ إعداد صفحة Streamlit
 st.set_page_config(page_title="⚖️ القاضي الذكي", layout="centered")
@@ -15,13 +15,13 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # ✅ ⏰ التايمر يبدأ عند أول دخول للجلسة
 if "start_time" not in st.session_state:
-    st.session_state.start_time = datetime.utcnow()
+    st.session_state.start_time = datetime.now(timezone.utc)
 
 # تحديد نهاية الوقت (تقدر تغيره من 10 ثواني إلى ساعة بعدين)
 end_time = st.session_state.start_time + timedelta(seconds=10)
 
 # حساب الوقت المتبقي
-remaining_time = end_time - datetime.utcnow()
+remaining_time = end_time - datetime.now(timezone.utc)
 
 if remaining_time.total_seconds() > 0:
     mins, secs = divmod(int(remaining_time.total_seconds()), 60)
