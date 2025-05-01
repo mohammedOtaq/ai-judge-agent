@@ -24,7 +24,7 @@ end_time = st.session_state.start_time + timedelta(hours=1)
 remaining_time = end_time - datetime.utcnow()
 
 if remaining_time.total_seconds() > 0:
-    mins, secs = divmod(int(remaining_time.total_seconds()), 2000000)
+    mins, secs = divmod(int(remaining_time.total_seconds()), 60)
     st.info(f"🕒 تبقى من وقتك المجاني: {mins} دقيقة و {secs} ثانية")
 else:
     st.error("⛔ انتهى وقت الاستخدام المجاني. الرجاء الترقية لمواصلة الاستخدام.")
